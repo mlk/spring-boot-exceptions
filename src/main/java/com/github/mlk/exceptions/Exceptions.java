@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @ControllerAdvice
 public class Exceptions {
@@ -30,6 +32,7 @@ public class Exceptions {
 
   private static final String CLIENT_ERROR = "CLIENT_ERROR";
   private static final String SERVER_ERROR = "SERVER_ERROR";
+  private static final String VAGUE_ERROR_MESSAGE = "Sorry, something failed.";
 
   public static class InternalServerError extends RuntimeException {
 
@@ -84,7 +87,7 @@ public class Exceptions {
         .withStatus(INTERNAL_SERVER_ERROR.value())
         .withUrl(httpServletRequest.getRequestURL().toString())
         .withMessage(SERVER_ERROR)
-        .withDescription("Downstream call failed")
+        .withDescription(VAGUE_ERROR_MESSAGE)
         .build();
   }
 
@@ -132,6 +135,40 @@ public class Exceptions {
   }
 
   @ResponseStatus(BAD_REQUEST)
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  @ResponseBody
+  public ErrorResponse handleMethodTypeNotValid(HttpServletRequest request,
+      MethodArgumentTypeMismatchException exception) {
+
+    String description = String.format("Parameter value '%s' is not valid for request parameter '%s'",
+        exception.getValue(), exception.getName());
+
+    return anError()
+        .withStatus(BAD_REQUEST.value())
+        .withUrl(request.getRequestURL().toString())
+        .withMessage(CLIENT_ERROR)
+        .withDescription(description)
+        .build();
+  }
+
+  @ResponseStatus(INTERNAL_SERVER_ERROR)
+  @ExceptionHandler(HttpServerErrorException.class)
+  @ResponseBody
+  public ErrorResponse handleHttpServerErrorException(HttpServletRequest httpServletRequest,
+      HttpServerErrorException e) {
+    log.error(
+        format("Request failed with status: %s and response: %s", e.getStatusCode(),
+            e.getResponseBodyAsString()), e);
+
+    return anError()
+        .withStatus(INTERNAL_SERVER_ERROR.value())
+        .withUrl(httpServletRequest.getRequestURL().toString())
+        .withMessage(SERVER_ERROR)
+        .withDescription(VAGUE_ERROR_MESSAGE)
+        .build();
+  }
+
+  @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(UnsatisfiedServletRequestParameterException.class)
   @ResponseBody
   public ErrorResponse handleUnsatisfiedParameter(HttpServletRequest request,
@@ -159,7 +196,7 @@ public class Exceptions {
         .withStatus(INTERNAL_SERVER_ERROR.value())
         .withUrl(request.getRequestURL().toString())
         .withMessage(SERVER_ERROR)
-        .withDescription("Sorry, something failed.")
+        .withDescription(VAGUE_ERROR_MESSAGE)
         .build();
   }
 

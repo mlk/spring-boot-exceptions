@@ -26,8 +26,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -93,7 +95,7 @@ public class ExceptionsTest {
         .andExpect(jsonPath("status", is(500)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
         .andExpect(jsonPath("message", is("SERVER_ERROR")))
-        .andExpect(jsonPath("description", is("Downstream call failed")));
+        .andExpect(jsonPath("description", is("Sorry, something failed.")));
   }
 
   @Test
@@ -148,6 +150,36 @@ public class ExceptionsTest {
             jsonPath("description", is("Content type 'application/atom+xml' not supported")));
   }
 
+  @Test
+  public void handlesMethodArgumentTypeNotValid() throws Exception {
+    mockMvc.perform(get("/test/enum")
+        .param("enum", "NOT_AN_ENUM")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("status", is(400)))
+        .andExpect(jsonPath("url", is("http://localhost/test/enum")))
+        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
+        .andExpect(jsonPath("description",
+            is("Parameter value 'NOT_AN_ENUM' is not valid for request parameter 'enum'")));
+  }
+
+  @Test
+  public void throwsInternalServerErrorForUnhandledHttpServerErrorException() throws Exception {
+    doThrow(new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Something gone wrong",
+        "{\"error\":\"server error\"}".getBytes(), Charsets.UTF_8)).when(operation).action();
+
+    mockMvc.perform(post("/test")
+        .content(jsonContent)
+        .contentType(MediaType.APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("status", is(500)))
+        .andExpect(jsonPath("url", is("http://localhost/test")))
+        .andExpect(jsonPath("message", is("SERVER_ERROR")))
+        .andExpect(jsonPath("description", is("Sorry, something failed.")));
+  }
+
   @RestController
   @RequestMapping("test")
   @Profile("never-load-me")
@@ -168,11 +200,20 @@ public class ExceptionsTest {
     public Data get(String param) {
       return new Data();
     }
+
+    @GetMapping(path = "enum", params = "enum")
+    public Data getWithEnum(@RequestParam(name = "enum") Enum ignored) {
+      return new Data();
+    }
   }
 
   public interface Operation {
 
     Data action();
+  }
+
+  enum Enum {
+    VALUE
   }
 
   static class Data {
