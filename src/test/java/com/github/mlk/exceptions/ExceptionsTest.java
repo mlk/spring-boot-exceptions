@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.github.mlk.exceptions.Exceptions.BadRequest;
 import com.github.mlk.exceptions.Exceptions.InternalServerError;
+import com.github.mlk.exceptions.Exceptions.Unauthorized;
 import com.google.common.base.Charsets;
 import org.junit.Before;
 import org.junit.Test;
