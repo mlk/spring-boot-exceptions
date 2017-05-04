@@ -67,6 +67,22 @@ public class ExceptionsTest {
   }
 
   @Test
+  public void throwsUnauthorized() throws Exception {
+    doThrow(new Unauthorized("I don't know the password"))
+            .when(operation).action();
+
+    mockMvc.perform(post("/test")
+            .content(jsonContent)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andDo(print())
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("status", is(401)))
+            .andExpect(jsonPath("url", is("http://localhost/test")))
+            .andExpect(jsonPath("message", is("CLIENT_ERROR")))
+            .andExpect(jsonPath("description", is("I don't know the password")));
+  }
+
+  @Test
   public void throwsBadRequest() throws Exception {
     doThrow(new BadRequest("Bad client")).when(operation).action();
 
