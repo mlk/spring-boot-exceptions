@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.github.mlk.exceptions.Exceptions.BadRequest;
 import com.github.mlk.exceptions.Exceptions.InternalServerError;
+import com.github.mlk.exceptions.Exceptions.Unauthorized;
 import com.google.common.base.Charsets;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,6 +65,22 @@ public class ExceptionsTest {
         .andExpect(jsonPath("url", is("http://localhost/test")))
         .andExpect(jsonPath("message", is("SERVER_ERROR")))
         .andExpect(jsonPath("description", is("Chuck Norris instantiates abstract classes")));
+  }
+
+  @Test
+  public void throwsUnauthorized() throws Exception {
+    doThrow(new Unauthorized("I don't know the password"))
+            .when(operation).action();
+
+    mockMvc.perform(post("/test")
+            .content(jsonContent)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andDo(print())
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("status", is(401)))
+            .andExpect(jsonPath("url", is("http://localhost/test")))
+            .andExpect(jsonPath("message", is("CLIENT_ERROR")))
+            .andExpect(jsonPath("description", is("I don't know the password")));
   }
 
   @Test
