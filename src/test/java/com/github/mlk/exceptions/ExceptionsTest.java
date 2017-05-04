@@ -76,7 +76,7 @@ public class ExceptionsTest {
             .content(jsonContent)
             .contentType(MediaType.APPLICATION_JSON))
             .andDo(print())
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("status", is(401)))
             .andExpect(jsonPath("url", is("http://localhost/test")))
             .andExpect(jsonPath("message", is("CLIENT_ERROR")))
