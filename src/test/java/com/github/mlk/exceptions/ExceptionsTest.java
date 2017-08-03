@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.github.mlk.exceptions.Exceptions.BadRequest;
+import com.github.mlk.exceptions.Exceptions.Forbidden;
 import com.github.mlk.exceptions.Exceptions.InternalServerError;
 import com.github.mlk.exceptions.Exceptions.Unauthorized;
 import com.google.common.base.Charsets;
@@ -81,6 +82,21 @@ public class ExceptionsTest {
             .andExpect(jsonPath("url", is("http://localhost/test")))
             .andExpect(jsonPath("message", is("CLIENT_ERROR")))
             .andExpect(jsonPath("description", is("I don't know the password")));
+  }
+
+  @Test
+  public void throwsForbidden() throws Exception {
+    doThrow(new Forbidden("Forbidden request")).when(operation).action();
+
+    mockMvc.perform(post("/test")
+        .content(jsonContent)
+        .contentType(MediaType.APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("status", is(403)))
+        .andExpect(jsonPath("url", is("http://localhost/test")))
+        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
+        .andExpect(jsonPath("description", is("Forbidden request")));
   }
 
   @Test

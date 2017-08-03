@@ -3,7 +3,9 @@ package com.github.mlk.exceptions;
 import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
+
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -53,6 +55,13 @@ public class Exceptions {
     public Unauthorized(String description) { super(description); }
   }
 
+  public static class Forbidden extends RuntimeException {
+
+    public Forbidden(String description) {
+      super(description);
+    }
+  }
+
   @ResponseStatus(UNAUTHORIZED)
   @ExceptionHandler(Unauthorized.class)
   public ErrorResponse handleUnauthorized(HttpServletRequest request, Exception exception) {
@@ -62,6 +71,18 @@ public class Exceptions {
             .withMessage(CLIENT_ERROR)
             .withDescription(exception.getMessage())
             .build();
+  }
+
+  @ResponseStatus(FORBIDDEN)
+  @ExceptionHandler(Forbidden.class)
+  @ResponseBody
+  public ErrorResponse handleForbidden(HttpServletRequest request, Exception exception) {
+    return anError()
+        .withStatus(FORBIDDEN.value())
+        .withUrl(request.getRequestURL().toString())
+        .withMessage(CLIENT_ERROR)
+        .withDescription(exception.getMessage())
+        .build();
   }
 
   @ResponseStatus(BAD_REQUEST)
