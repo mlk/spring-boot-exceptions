@@ -3,11 +3,12 @@ package com.github.mlk.exceptions;
 import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 import java.util.stream.Collectors;
@@ -19,15 +20,14 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.UnsatisfiedServletRequestParameterException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class Exceptions {
 
   private static final Logger log = LoggerFactory.getLogger(Exceptions.class);
@@ -64,7 +64,6 @@ public class Exceptions {
 
   @ResponseStatus(UNAUTHORIZED)
   @ExceptionHandler(Unauthorized.class)
-  @ResponseBody
   public ErrorResponse handleUnauthorized(HttpServletRequest request, Exception exception) {
     return anError()
             .withStatus(UNAUTHORIZED.value())
@@ -88,7 +87,6 @@ public class Exceptions {
 
   @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(BadRequest.class)
-  @ResponseBody
   public ErrorResponse handleBadRequest(HttpServletRequest request, Exception exception) {
     return anError()
         .withStatus(BAD_REQUEST.value())
@@ -100,7 +98,6 @@ public class Exceptions {
 
   @ResponseStatus(INTERNAL_SERVER_ERROR)
   @ExceptionHandler(InternalServerError.class)
-  @ResponseBody
   public ErrorResponse handleInternalServerError(HttpServletRequest request, Exception exception) {
     log.error("Handled internal server error", exception);
 
@@ -114,7 +111,6 @@ public class Exceptions {
 
   @ResponseStatus(INTERNAL_SERVER_ERROR)
   @ExceptionHandler(HttpClientErrorException.class)
-  @ResponseBody
   public ErrorResponse handleHttpClientErrorException(HttpServletRequest httpServletRequest,
       HttpClientErrorException e) {
     log.error(
@@ -131,7 +127,6 @@ public class Exceptions {
 
   @ResponseStatus(METHOD_NOT_ALLOWED)
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-  @ResponseBody
   public ErrorResponse handleMethodNotAllowed(HttpServletRequest request, Exception exception) {
     return anError()
         .withStatus(METHOD_NOT_ALLOWED.value())
@@ -143,7 +138,6 @@ public class Exceptions {
 
   @ResponseStatus(UNSUPPORTED_MEDIA_TYPE)
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-  @ResponseBody
   public ErrorResponse handleMediaTypeNotSupported(HttpServletRequest request,
       Exception exception) {
     return anError()
@@ -156,7 +150,6 @@ public class Exceptions {
 
   @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  @ResponseBody
   public ErrorResponse handleMethodArgumentNotValid(HttpServletRequest request,
       MethodArgumentNotValidException exception) {
 
@@ -174,7 +167,6 @@ public class Exceptions {
 
   @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-  @ResponseBody
   public ErrorResponse handleMethodTypeNotValid(HttpServletRequest request,
       MethodArgumentTypeMismatchException exception) {
 
@@ -191,7 +183,6 @@ public class Exceptions {
 
   @ResponseStatus(INTERNAL_SERVER_ERROR)
   @ExceptionHandler(HttpServerErrorException.class)
-  @ResponseBody
   public ErrorResponse handleHttpServerErrorException(HttpServletRequest httpServletRequest,
       HttpServerErrorException e) {
     log.error(
@@ -208,7 +199,6 @@ public class Exceptions {
 
   @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(UnsatisfiedServletRequestParameterException.class)
-  @ResponseBody
   public ErrorResponse handleUnsatisfiedParameter(HttpServletRequest request,
       UnsatisfiedServletRequestParameterException exception) {
 
@@ -226,7 +216,6 @@ public class Exceptions {
 
   @ResponseStatus(INTERNAL_SERVER_ERROR)
   @ExceptionHandler(Throwable.class)
-  @ResponseBody
   public ErrorResponse catchAllHandler(HttpServletRequest request, Throwable ex) {
     log.error("Unexpected error handled", ex);
 
