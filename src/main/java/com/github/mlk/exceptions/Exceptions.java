@@ -3,11 +3,11 @@ package com.github.mlk.exceptions;
 import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 import java.util.stream.Collectors;
@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -169,6 +170,18 @@ public class Exceptions {
         .withUrl(request.getRequestURL().toString())
         .withMessage(CLIENT_ERROR)
         .withDescription(description)
+        .build();
+  }
+
+  @ResponseStatus(BAD_REQUEST)
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  @ResponseBody
+  public ErrorResponse handleMessageNotReadable(HttpServletRequest request) {
+    return anError()
+        .withStatus(BAD_REQUEST.value())
+        .withUrl(request.getRequestURL().toString())
+        .withMessage(CLIENT_ERROR)
+        .withDescription("Http message was not readable")
         .build();
   }
 

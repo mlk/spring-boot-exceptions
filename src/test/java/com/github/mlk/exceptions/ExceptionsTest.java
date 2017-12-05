@@ -184,6 +184,20 @@ public class ExceptionsTest {
   }
 
   @Test
+  public void handlesMessageBodyNotReadable() throws Exception {
+    mockMvc.perform(post("/test")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("somegarbage"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("status", is(400)))
+        .andExpect(jsonPath("url", is("http://localhost/test")))
+        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
+        .andExpect(
+            jsonPath("description", is("Http message was not readable")));
+  }
+
+  @Test
   public void handlesMethodArgumentTypeNotValid() throws Exception {
     mockMvc.perform(get("/test/enum")
         .param("enum", "NOT_AN_ENUM")
