@@ -1,6 +1,6 @@
 package com.github.mlk.exceptions;
 
-import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
+import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anErrorResponse;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -33,83 +33,80 @@ public class Exceptions {
 
   private static final Logger log = LoggerFactory.getLogger(Exceptions.class);
 
-  private static final String CLIENT_ERROR = "CLIENT_ERROR";
-  private static final String SERVER_ERROR = "SERVER_ERROR";
   private static final String VAGUE_ERROR_MESSAGE = "Sorry, something failed.";
 
-  public static class InternalServerError extends RuntimeException {
+  public static class InternalServerError extends Error {}
+  public static class BadRequest extends Error {}
+  public static class Unauthorized extends Error {}
+  public static class Forbidden extends Error {}
 
-    public InternalServerError(String description) {
-      super(description);
+  public static class Error extends RuntimeException {
+
+    private String code;
+    private String description;
+
+    public Error withCode(String code) {
+      this.code = code;
+      return this;
     }
-  }
 
-  public static class BadRequest extends RuntimeException {
-
-    public BadRequest(String description) {
-      super(description);
+    public Error withDescription(String description) {
+      this.description = description;
+      return this;
     }
-  }
 
-  public static class Unauthorized extends RuntimeException {
+    public String getCode() {
+      return code;
+    }
 
-    public Unauthorized(String description) { super(description); }
-  }
-
-  public static class Forbidden extends RuntimeException {
-
-    public Forbidden(String description) {
-      super(description);
+    public String getDescription() {
+      return description;
     }
   }
 
   @ResponseStatus(UNAUTHORIZED)
   @ExceptionHandler(Unauthorized.class)
   @ResponseBody
-  public ErrorResponse handleUnauthorized(HttpServletRequest request, Exception exception) {
-    return anError()
-            .withStatus(UNAUTHORIZED.value())
-            .withUrl(request.getRequestURL().toString())
-            .withMessage(CLIENT_ERROR)
-            .withDescription(exception.getMessage())
-            .build();
+  public ErrorResponse handleUnauthorized(HttpServletRequest request, Unauthorized exception) {
+    return anErrorResponse()
+        .withUrl(request.getRequestURL().toString())
+        .withCode(exception.getCode())
+        .withDescription(exception.getDescription())
+        .build();
   }
 
   @ResponseStatus(FORBIDDEN)
   @ExceptionHandler(Forbidden.class)
   @ResponseBody
-  public ErrorResponse handleForbidden(HttpServletRequest request, Exception exception) {
-    return anError()
-        .withStatus(FORBIDDEN.value())
+  public ErrorResponse handleForbidden(HttpServletRequest request, Forbidden exception) {
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
-        .withDescription(exception.getMessage())
+        .withCode(exception.getMessage())
+        .withDescription(exception.getDescription())
         .build();
   }
 
   @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(BadRequest.class)
   @ResponseBody
-  public ErrorResponse handleBadRequest(HttpServletRequest request, Exception exception) {
-    return anError()
-        .withStatus(BAD_REQUEST.value())
+  public ErrorResponse handleBadRequest(HttpServletRequest request, BadRequest exception) {
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
-        .withDescription(exception.getMessage())
+        .withCode(exception.getCode())
+        .withDescription(exception.getDescription())
         .build();
   }
 
   @ResponseStatus(INTERNAL_SERVER_ERROR)
   @ExceptionHandler(InternalServerError.class)
   @ResponseBody
-  public ErrorResponse handleInternalServerError(HttpServletRequest request, Exception exception) {
+  public ErrorResponse handleInternalServerError(HttpServletRequest request, InternalServerError exception) {
     log.error("Handled internal server error", exception);
 
-    return anError()
-        .withStatus(INTERNAL_SERVER_ERROR.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(SERVER_ERROR)
-        .withDescription(exception.getMessage())
+        .withCode(exception.getCode())
+        .withDescription(exception.getDescription())
         .build();
   }
 
@@ -122,10 +119,8 @@ public class Exceptions {
         format("Downstream call failed with status: %s and response: %s", e.getStatusCode(),
             e.getResponseBodyAsString()), e);
 
-    return anError()
-        .withStatus(INTERNAL_SERVER_ERROR.value())
+    return anErrorResponse()
         .withUrl(httpServletRequest.getRequestURL().toString())
-        .withMessage(SERVER_ERROR)
         .withDescription(VAGUE_ERROR_MESSAGE)
         .build();
   }
@@ -134,10 +129,8 @@ public class Exceptions {
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
   @ResponseBody
   public ErrorResponse handleMethodNotAllowed(HttpServletRequest request, Exception exception) {
-    return anError()
-        .withStatus(METHOD_NOT_ALLOWED.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
         .withDescription(exception.getMessage())
         .build();
   }
@@ -147,10 +140,8 @@ public class Exceptions {
   @ResponseBody
   public ErrorResponse handleMediaTypeNotSupported(HttpServletRequest request,
       Exception exception) {
-    return anError()
-        .withStatus(UNSUPPORTED_MEDIA_TYPE.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
         .withDescription(exception.getMessage())
         .build();
   }
@@ -165,10 +156,8 @@ public class Exceptions {
         .map(error -> format("%s %s", error.getField(), error.getDefaultMessage())).collect(
             Collectors.joining(", "));
 
-    return anError()
-        .withStatus(BAD_REQUEST.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
         .withDescription(description)
         .build();
   }
@@ -177,10 +166,8 @@ public class Exceptions {
   @ExceptionHandler(HttpMessageNotReadableException.class)
   @ResponseBody
   public ErrorResponse handleMessageNotReadable(HttpServletRequest request) {
-    return anError()
-        .withStatus(BAD_REQUEST.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
         .withDescription("Http message was not readable")
         .build();
   }
@@ -194,10 +181,8 @@ public class Exceptions {
     String description = String.format("Parameter value '%s' is not valid for request parameter '%s'",
         exception.getValue(), exception.getName());
 
-    return anError()
-        .withStatus(BAD_REQUEST.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
         .withDescription(description)
         .build();
   }
@@ -211,10 +196,8 @@ public class Exceptions {
         format("Request failed with status: %s and response: %s", e.getStatusCode(),
             e.getResponseBodyAsString()), e);
 
-    return anError()
-        .withStatus(INTERNAL_SERVER_ERROR.value())
+    return anErrorResponse()
         .withUrl(httpServletRequest.getRequestURL().toString())
-        .withMessage(SERVER_ERROR)
         .withDescription(VAGUE_ERROR_MESSAGE)
         .build();
   }
@@ -228,10 +211,8 @@ public class Exceptions {
     String unsatisfiedConditions = Stream.of(exception.getParamConditions())
         .collect(joining(","));
 
-    return anError()
-        .withStatus(BAD_REQUEST.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(CLIENT_ERROR)
         .withDescription(
             format("Parameter conditions not met for request: %s", unsatisfiedConditions))
         .build();
@@ -243,38 +224,30 @@ public class Exceptions {
   public ErrorResponse catchAllHandler(HttpServletRequest request, Throwable ex) {
     log.error("Unexpected error handled", ex);
 
-    return anError()
-        .withStatus(INTERNAL_SERVER_ERROR.value())
+    return anErrorResponse()
         .withUrl(request.getRequestURL().toString())
-        .withMessage(SERVER_ERROR)
         .withDescription(VAGUE_ERROR_MESSAGE)
         .build();
   }
 
   public static class ErrorResponse {
 
-    private int status;
     private String url;
-    private String message;
+    private String code;
     private String description;
 
-    public ErrorResponse(int status, String url, String message, String description) {
-      this.status = status;
+    public ErrorResponse(String url, String code, String description) {
       this.url = url;
-      this.message = message;
+      this.code = code;
       this.description = description;
-    }
-
-    public int getStatus() {
-      return status;
     }
 
     public String getUrl() {
       return url;
     }
 
-    public String getMessage() {
-      return message;
+    public String getCode() {
+      return code;
     }
 
     public String getDescription() {
@@ -283,18 +256,12 @@ public class Exceptions {
 
     public static class Builder {
 
-      private int status;
       private String url;
-      private String message;
+      private String code;
       private String description;
 
-      public static Builder anError() {
+      public static Builder anErrorResponse() {
         return new Builder();
-      }
-
-      public Builder withStatus(int status) {
-        this.status = status;
-        return this;
       }
 
       public Builder withUrl(String url) {
@@ -302,8 +269,8 @@ public class Exceptions {
         return this;
       }
 
-      public Builder withMessage(String message) {
-        this.message = message;
+      public Builder withCode(String code) {
+        this.code = code;
         return this;
       }
 
@@ -313,7 +280,7 @@ public class Exceptions {
       }
 
       public ErrorResponse build() {
-        return new ErrorResponse(status, url, message, description);
+        return new ErrorResponse(url, code, description);
       }
     }
   }

@@ -54,7 +54,8 @@ public class ExceptionsTest {
 
   @Test
   public void throwsInternalServerError() throws Exception {
-    doThrow(new InternalServerError("Chuck Norris instantiates abstract classes"))
+    doThrow(new InternalServerError()
+        .withDescription("Chuck Norris instantiates abstract classes"))
         .when(operation).action();
 
     mockMvc.perform(post("/test")
@@ -62,15 +63,13 @@ public class ExceptionsTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isInternalServerError())
-        .andExpect(jsonPath("status", is(500)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("SERVER_ERROR")))
         .andExpect(jsonPath("description", is("Chuck Norris instantiates abstract classes")));
   }
 
   @Test
   public void throwsUnauthorized() throws Exception {
-    doThrow(new Unauthorized("I don't know the password"))
+    doThrow(new Unauthorized().withDescription("I don't know the password"))
             .when(operation).action();
 
     mockMvc.perform(post("/test")
@@ -78,40 +77,37 @@ public class ExceptionsTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andDo(print())
             .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("status", is(401)))
             .andExpect(jsonPath("url", is("http://localhost/test")))
-            .andExpect(jsonPath("message", is("CLIENT_ERROR")))
             .andExpect(jsonPath("description", is("I don't know the password")));
   }
 
   @Test
   public void throwsForbidden() throws Exception {
-    doThrow(new Forbidden("Forbidden request")).when(operation).action();
+    doThrow(new Forbidden().withDescription("Forbidden request")).when(operation).action();
 
     mockMvc.perform(post("/test")
         .content(jsonContent)
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("status", is(403)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
         .andExpect(jsonPath("description", is("Forbidden request")));
   }
 
   @Test
   public void throwsBadRequest() throws Exception {
-    doThrow(new BadRequest("Bad client")).when(operation).action();
+    doThrow(new BadRequest()
+        .withCode("INVALID_QUERY")
+        .withDescription("Query param was invalid")).when(operation).action();
 
     mockMvc.perform(post("/test")
         .content(jsonContent)
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("status", is(400)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
-        .andExpect(jsonPath("description", is("Bad client")));
+        .andExpect(jsonPath("code", is("INVALID_QUERY")))
+        .andExpect(jsonPath("description", is("Query param was invalid")));
   }
 
   @Test
@@ -125,9 +121,7 @@ public class ExceptionsTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isInternalServerError())
-        .andExpect(jsonPath("status", is(500)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("SERVER_ERROR")))
         .andExpect(jsonPath("description", is("Sorry, something failed.")));
   }
 
@@ -141,9 +135,7 @@ public class ExceptionsTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isInternalServerError())
-        .andExpect(jsonPath("status", is(500)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("SERVER_ERROR")))
         .andExpect(jsonPath("description", is("Sorry, something failed.")));
   }
 
@@ -152,9 +144,7 @@ public class ExceptionsTest {
     mockMvc.perform(put("/test"))
         .andDo(print())
         .andExpect(status().isMethodNotAllowed())
-        .andExpect(jsonPath("status", is(405)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
         .andExpect(jsonPath("description", is("Request method 'PUT' not supported")));
   }
 
@@ -163,9 +153,7 @@ public class ExceptionsTest {
     mockMvc.perform(get("/test"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("status", is(400)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
         .andExpect(jsonPath("description", is("Parameter conditions not met for request: param")));
   }
 
@@ -176,11 +164,8 @@ public class ExceptionsTest {
         .content(jsonContent))
         .andDo(print())
         .andExpect(status().isUnsupportedMediaType())
-        .andExpect(jsonPath("status", is(415)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
-        .andExpect(
-            jsonPath("description", is("Content type 'application/atom+xml' not supported")));
+        .andExpect(jsonPath("description", is("Content type 'application/atom+xml' not supported")));
   }
 
   @Test
@@ -190,11 +175,8 @@ public class ExceptionsTest {
         .content("somegarbage"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("status", is(400)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
-        .andExpect(
-            jsonPath("description", is("Http message was not readable")));
+        .andExpect(jsonPath("description", is("Http message was not readable")));
   }
 
   @Test
@@ -204,9 +186,7 @@ public class ExceptionsTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("status", is(400)))
         .andExpect(jsonPath("url", is("http://localhost/test/enum")))
-        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
         .andExpect(jsonPath("description",
             is("Parameter value 'NOT_AN_ENUM' is not valid for request parameter 'enum'")));
   }
@@ -221,9 +201,7 @@ public class ExceptionsTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isInternalServerError())
-        .andExpect(jsonPath("status", is(500)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
-        .andExpect(jsonPath("message", is("SERVER_ERROR")))
         .andExpect(jsonPath("description", is("Sorry, something failed.")));
   }
 
