@@ -2,6 +2,10 @@ machine:
   java:
     version: openjdk8
 
+general:
+  artifacts:
+    - build/reports/tests
+
 deployment:
   production:
     branch: master
