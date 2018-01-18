@@ -1,18 +1,5 @@
 package com.github.mlk.exceptions;
 
-import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
-import static java.lang.String.format;
-import static java.util.stream.Collectors.joining;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
-
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +14,22 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.time.format.DateTimeParseException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
+import static java.lang.String.format;
+import static java.util.stream.Collectors.joining;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 @ControllerAdvice
 public class Exceptions {
@@ -53,7 +56,9 @@ public class Exceptions {
 
   public static class Unauthorized extends RuntimeException {
 
-    public Unauthorized(String description) { super(description); }
+    public Unauthorized(String description) {
+      super(description);
+    }
   }
 
   public static class Forbidden extends RuntimeException {
@@ -68,11 +73,11 @@ public class Exceptions {
   @ResponseBody
   public ErrorResponse handleUnauthorized(HttpServletRequest request, Exception exception) {
     return anError()
-            .withStatus(UNAUTHORIZED.value())
-            .withUrl(request.getRequestURL().toString())
-            .withMessage(CLIENT_ERROR)
-            .withDescription(exception.getMessage())
-            .build();
+        .withStatus(UNAUTHORIZED.value())
+        .withUrl(request.getRequestURL().toString())
+        .withMessage(CLIENT_ERROR)
+        .withDescription(exception.getMessage())
+        .build();
   }
 
   @ResponseStatus(FORBIDDEN)
@@ -117,7 +122,7 @@ public class Exceptions {
   @ExceptionHandler(HttpClientErrorException.class)
   @ResponseBody
   public ErrorResponse handleHttpClientErrorException(HttpServletRequest httpServletRequest,
-      HttpClientErrorException e) {
+                                                      HttpClientErrorException e) {
     log.error(
         format("Downstream call failed with status: %s and response: %s", e.getStatusCode(),
             e.getResponseBodyAsString()), e);
@@ -127,6 +132,20 @@ public class Exceptions {
         .withUrl(httpServletRequest.getRequestURL().toString())
         .withMessage(SERVER_ERROR)
         .withDescription(VAGUE_ERROR_MESSAGE)
+        .build();
+  }
+
+  @ResponseStatus(BAD_REQUEST)
+  @ExceptionHandler(DateTimeParseException.class)
+  @ResponseBody
+  public ErrorResponse handleInvalidDateTime(HttpServletRequest httpServletRequest,
+                                             DateTimeParseException e) {
+
+    return anError()
+        .withStatus(BAD_REQUEST.value())
+        .withUrl(httpServletRequest.getRequestURL().toString())
+        .withMessage(CLIENT_ERROR)
+        .withDescription(e.getParsedString())
         .build();
   }
 
@@ -146,7 +165,7 @@ public class Exceptions {
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
   @ResponseBody
   public ErrorResponse handleMediaTypeNotSupported(HttpServletRequest request,
-      Exception exception) {
+                                                   Exception exception) {
     return anError()
         .withStatus(UNSUPPORTED_MEDIA_TYPE.value())
         .withUrl(request.getRequestURL().toString())
@@ -159,7 +178,7 @@ public class Exceptions {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   @ResponseBody
   public ErrorResponse handleMethodArgumentNotValid(HttpServletRequest request,
-      MethodArgumentNotValidException exception) {
+                                                    MethodArgumentNotValidException exception) {
 
     String description = exception.getBindingResult().getFieldErrors().stream()
         .map(error -> format("%s %s", error.getField(), error.getDefaultMessage())).collect(
@@ -189,7 +208,7 @@ public class Exceptions {
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   @ResponseBody
   public ErrorResponse handleMethodTypeNotValid(HttpServletRequest request,
-      MethodArgumentTypeMismatchException exception) {
+                                                MethodArgumentTypeMismatchException exception) {
 
     String description = String.format("Parameter value '%s' is not valid for request parameter '%s'",
         exception.getValue(), exception.getName());
@@ -206,7 +225,7 @@ public class Exceptions {
   @ExceptionHandler(HttpServerErrorException.class)
   @ResponseBody
   public ErrorResponse handleHttpServerErrorException(HttpServletRequest httpServletRequest,
-      HttpServerErrorException e) {
+                                                      HttpServerErrorException e) {
     log.error(
         format("Request failed with status: %s and response: %s", e.getStatusCode(),
             e.getResponseBodyAsString()), e);
@@ -223,7 +242,7 @@ public class Exceptions {
   @ExceptionHandler(UnsatisfiedServletRequestParameterException.class)
   @ResponseBody
   public ErrorResponse handleUnsatisfiedParameter(HttpServletRequest request,
-      UnsatisfiedServletRequestParameterException exception) {
+                                                  UnsatisfiedServletRequestParameterException exception) {
 
     String unsatisfiedConditions = Stream.of(exception.getParamConditions())
         .collect(joining(","));

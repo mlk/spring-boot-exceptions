@@ -1,6 +1,6 @@
 buildscript {
     dependencies {
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:1.5.1.RELEASE"
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:1.5.9.RELEASE"
         classpath 'info.solidsoft.gradle.pitest:gradle-pitest-plugin:1.1.11'
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.8.0"
     }
@@ -43,11 +43,11 @@ signing {
 
 
 dependencies {
-    compile 'org.springframework.boot:spring-boot-starter-web:1.5.1.RELEASE'
-    compile 'org.springframework.boot:spring-boot-starter-actuator:1.5.1.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-web:1.5.9.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-actuator:1.5.9.RELEASE'
 
     compile 'com.google.guava:guava:21.0'
-    testCompile 'org.springframework.boot:spring-boot-starter-test:1.5.1.RELEASE'
+    testCompile 'org.springframework.boot:spring-boot-starter-test:1.5.9.RELEASE'
 }
 
 uploadArchives {

@@ -1,25 +1,19 @@
 package com.github.mlk.exceptions;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Mockito.doThrow;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.google.common.base.Charsets;
 
 import com.github.mlk.exceptions.Exceptions.BadRequest;
 import com.github.mlk.exceptions.Exceptions.Forbidden;
 import com.github.mlk.exceptions.Exceptions.InternalServerError;
 import com.github.mlk.exceptions.Exceptions.Unauthorized;
-import com.google.common.base.Charsets;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,6 +28,19 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 
+import java.time.LocalDate;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @RunWith(MockitoJUnitRunner.class)
 public class ExceptionsTest {
 
@@ -45,7 +52,7 @@ public class ExceptionsTest {
   private final String jsonContent = "{\"value\": \"data\"}";
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mockMvc = MockMvcBuilders.standaloneSetup(
         new ExceptionsTestController(operation))
         .setControllerAdvice(new Exceptions())
@@ -166,7 +173,7 @@ public class ExceptionsTest {
         .andExpect(jsonPath("status", is(400)))
         .andExpect(jsonPath("url", is("http://localhost/test")))
         .andExpect(jsonPath("message", is("CLIENT_ERROR")))
-        .andExpect(jsonPath("description", is("Parameter conditions not met for request: param")));
+        .andExpect(jsonPath("description", containsString("Parameter conditions not met")));
   }
 
   @Test
@@ -196,6 +203,20 @@ public class ExceptionsTest {
         .andExpect(
             jsonPath("description", is("Http message was not readable")));
   }
+
+  @Test
+  public void handlesInvalidDateFormats() throws Exception {
+    mockMvc.perform(get("/test")
+        .param("date", "2018-11"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("status", is(400)))
+        .andExpect(jsonPath("url", is("http://localhost/test")))
+        .andExpect(jsonPath("message", is("CLIENT_ERROR")))
+        .andExpect(
+            jsonPath("description", is("Parameter value '2018-11' is not valid for request parameter 'date'")));
+  }
+
 
   @Test
   public void handlesMethodArgumentTypeNotValid() throws Exception {
@@ -245,6 +266,12 @@ public class ExceptionsTest {
 
     @GetMapping(params = "param")
     public Data get(String param) {
+      return new Data();
+    }
+
+    @GetMapping(params = "date")
+    public Data getWithEnum(
+        @RequestParam(name = "date") @DateTimeFormat(iso = DATE) LocalDate date) {
       return new Data();
     }
 
