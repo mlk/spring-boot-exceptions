@@ -3,9 +3,11 @@ buildscript {
         classpath "org.springframework.boot:spring-boot-gradle-plugin:1.5.9.RELEASE"
         classpath 'info.solidsoft.gradle.pitest:gradle-pitest-plugin:1.1.11'
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.8.0"
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
     }
     repositories {
         mavenCentral()
+        maven { url 'http://repo.spring.io/plugins-release' }
     }
 }
 
@@ -14,6 +16,7 @@ apply plugin: "info.solidsoft.pitest"
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'io.codearte.nexus-staging'
+apply plugin: 'propdeps'
 
 group = 'com.github.mlk'
 version = "1.1.${System.env.CIRCLE_BUILD_NUM}"
@@ -43,8 +46,8 @@ signing {
 
 
 dependencies {
-    compile 'org.springframework.boot:spring-boot-starter-web:1.5.9.RELEASE'
-    compile 'org.springframework.boot:spring-boot-starter-actuator:1.5.9.RELEASE'
+    provided 'org.springframework.boot:spring-boot-starter-web:1.5.9.RELEASE'
+    provided 'org.springframework.boot:spring-boot-starter-actuator:1.5.9.RELEASE'
 
     compile 'com.google.guava:guava:21.0'
     testCompile 'org.springframework.boot:spring-boot-starter-test:1.5.9.RELEASE'
