@@ -100,8 +100,12 @@ public class Exceptions {
   public ErrorResponse handleMultipartException(HttpServletRequest httpServletRequest, MultipartException e) {
     log.error("Multipart resolution failed with message : {} and cause: {}", e.getMessage(), e.getMostSpecificCause());
 
-    return anError().withStatus(INTERNAL_SERVER_ERROR.value()).withUrl(httpServletRequest.getRequestURL().toString())
-        .withMessage(SERVER_ERROR).withDescription(VAGUE_ERROR_MESSAGE).build();
+    return anError()
+        .withStatus(INTERNAL_SERVER_ERROR.value())
+        .withUrl(httpServletRequest.getRequestURL().toString())
+        .withMessage(SERVER_ERROR)
+        .withDescription(VAGUE_ERROR_MESSAGE)
+        .build();
   }
 
   @ResponseStatus(BAD_REQUEST)
@@ -256,8 +260,11 @@ public class Exceptions {
   public ErrorResponse handleRestClientException(HttpServletRequest httpServletRequest, RestClientException e) {
     log.error("RestClient call failed with message : {} and cause: {}", e.getMessage(), e.getMostSpecificCause());
 
-    return anError().withStatus(INTERNAL_SERVER_ERROR.value()).withUrl(httpServletRequest.getRequestURL().toString())
-        .withMessage(SERVER_ERROR).withDescription(VAGUE_ERROR_MESSAGE).build();
+    return anError().withStatus(INTERNAL_SERVER_ERROR.value())
+        .withUrl(httpServletRequest.getRequestURL().toString())
+        .withMessage(SERVER_ERROR)
+        .withDescription(VAGUE_ERROR_MESSAGE)
+        .build();
   }
 
   @ResponseStatus(BAD_REQUEST)
