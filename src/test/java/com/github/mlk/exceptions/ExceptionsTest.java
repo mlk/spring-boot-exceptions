@@ -1,11 +1,21 @@
 package com.github.mlk.exceptions;
 
-import com.google.common.base.Charsets;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.github.mlk.exceptions.Exceptions.BadRequest;
 import com.github.mlk.exceptions.Exceptions.Forbidden;
 import com.github.mlk.exceptions.Exceptions.InternalServerError;
 import com.github.mlk.exceptions.Exceptions.Unauthorized;
+import com.google.common.base.Charsets;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,19 +37,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.LocalDate;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Mockito.doThrow;
-import static org.springframework.format.annotation.DateTimeFormat.ISO.DATE;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExceptionsTest {
@@ -239,6 +239,35 @@ public class ExceptionsTest {
 
     mockMvc.perform(post("/test")
         .content(jsonContent)
+        .contentType(MediaType.APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("status", is(500)))
+        .andExpect(jsonPath("url", is("http://localhost/test")))
+        .andExpect(jsonPath("message", is("SERVER_ERROR")))
+        .andExpect(jsonPath("description", is("Sorry, something failed.")));
+  }
+
+  @Test
+  public void throwsRestClientException() throws Exception {
+    doThrow(new RestClientException("Something happened")).when(operation).action();
+
+    mockMvc.perform(post("/test")
+        .content(jsonContent)
+        .contentType(MediaType.APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("status", is(500)))
+        .andExpect(jsonPath("url", is("http://localhost/test")))
+        .andExpect(jsonPath("message", is("SERVER_ERROR")))
+        .andExpect(jsonPath("description", is("Sorry, something failed.")));
+  }
+
+  @Test
+  public void throwsMultipartException() throws Exception {
+    doThrow(new MultipartException("Could not parse multipart servlet request")).when(operation).action();
+
+    mockMvc.perform(post("/test").content(jsonContent)
         .contentType(MediaType.APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isInternalServerError())

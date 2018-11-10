@@ -1,5 +1,15 @@
 package com.github.mlk.exceptions;
 
+import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
+import static java.lang.String.format;
+import static java.util.stream.Collectors.joining;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,23 +23,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
-
-import static com.github.mlk.exceptions.Exceptions.ErrorResponse.Builder.anError;
-import static java.lang.String.format;
-import static java.util.stream.Collectors.joining;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 @ControllerAdvice
 public class Exceptions {
@@ -89,6 +91,20 @@ public class Exceptions {
         .withUrl(request.getRequestURL().toString())
         .withMessage(CLIENT_ERROR)
         .withDescription(exception.getMessage())
+        .build();
+  }
+
+  @ResponseStatus(INTERNAL_SERVER_ERROR)
+  @ExceptionHandler(MultipartException.class)
+  @ResponseBody
+  public ErrorResponse handleMultipartException(HttpServletRequest httpServletRequest, MultipartException e) {
+    log.error("Multipart resolution failed with message : {} and cause: {}", e.getMessage(), e.getMostSpecificCause());
+
+    return anError()
+        .withStatus(INTERNAL_SERVER_ERROR.value())
+        .withUrl(httpServletRequest.getRequestURL().toString())
+        .withMessage(SERVER_ERROR)
+        .withDescription(VAGUE_ERROR_MESSAGE)
         .build();
   }
 
@@ -232,6 +248,19 @@ public class Exceptions {
 
     return anError()
         .withStatus(INTERNAL_SERVER_ERROR.value())
+        .withUrl(httpServletRequest.getRequestURL().toString())
+        .withMessage(SERVER_ERROR)
+        .withDescription(VAGUE_ERROR_MESSAGE)
+        .build();
+  }
+
+  @ResponseStatus(INTERNAL_SERVER_ERROR)
+  @ExceptionHandler(RestClientException.class)
+  @ResponseBody
+  public ErrorResponse handleRestClientException(HttpServletRequest httpServletRequest, RestClientException e) {
+    log.error("RestClient call failed with message : {} and cause: {}", e.getMessage(), e.getMostSpecificCause());
+
+    return anError().withStatus(INTERNAL_SERVER_ERROR.value())
         .withUrl(httpServletRequest.getRequestURL().toString())
         .withMessage(SERVER_ERROR)
         .withDescription(VAGUE_ERROR_MESSAGE)
